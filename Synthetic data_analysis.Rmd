@@ -1,0 +1,472 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+setwd("/Users/maping/Documents/ganbaru/data/syntheticdataV2")
+
+folder_loc_linear <- "./ChangingLocation_Linear"
+folder_loc_quadratic <- "./ChangingLocation_Power/"
+folder_loc_piecewise <- "./ChangingLocation_Partial/"
+folder_loc_piecewise_de <- "./ChangingLocation_Partial_1/"
+
+folder_sca_linear <- "./ChangingScale_Linear/"
+folder_sca_quadratic <- "./ChangingScale_Power/"
+folder_sca_piecewise <- "./ChangingScale_Partial/"
+folder_sca_piecewise_de <- "./ChangingScale_Partial_1/"
+
+folder_both_linear <- "./ChangingLocationScale_Linear/"
+folder_both_quadratic <- "./ChangingLocationScale_Power/"
+folder_both_piecewise <- "./ChangingLocationScale_Partial/"
+
+# Function to read the CSV file and calculate slope
+read_csv_and_slope <- function(folder, file,csv_type,parameter) {
+  csv_file <- file.path(folder, file)
+  data <- read.csv(csv_file)
+  slope <- coef(lm(data[, 1] ~ seq_along(data[, 1])))[2]
+  parameter<-parameter
+  return(c(csv_type,parameter,slope))
+}
+
+# Initialize empty lists
+lists <- vector()
+csv_names <- vector()
+slopes <- vector()
+
+# Loop through each list and CSV files
+for (lst in c(folder_loc_linear, folder_loc_quadratic, folder_loc_piecewise, folder_loc_piecewise_de,
+              folder_sca_linear, folder_sca_quadratic, folder_sca_piecewise, folder_sca_piecewise_de,
+              folder_both_linear, folder_both_quadratic, folder_both_piecewise)) {
+  folder <- basename(lst)
+  csv_files <- list.files(lst, pattern = ".csv", full.names = TRUE)
+  
+  for (csv_file in csv_files) {
+    # Extract the CSV name
+    file_name <- basename(csv_file)
+    
+    # Check for specific numbers in the CSV name
+    if (grepl("76", file_name)) {
+      csv_type <- "River 1"
+    } else if (grepl("1950", file_name)) {
+      csv_type <- "River 2"
+    } else if (grepl("4546", file_name)) {
+      csv_type <- "River 3"
+    } else if (grepl("12966", file_name)) {
+      csv_type <- "River 4"
+    } else if (grepl("32163", file_name)) {
+      csv_type <- "River 6"
+    } else if (grepl("25979", file_name)) {
+      csv_type <- "River 5"
+    } else {
+      csv_type <- "Other"
+    }
+    
+    #####
+   if (grepl("ChangingLocation_", folder, ignore.case = TRUE)) {
+    parameter <- "location"
+    } else if (grepl("ChangingScale", folder, ignore.case = TRUE)) {
+    parameter <- "scale"
+    } else {
+    parameter <- "both"}
+    
+    
+    # Read the CSV file and calculate slope
+    result <- read_csv_and_slope(folder, file_name, csv_type,parameter)
+    
+    # Append the values to the corresponding lists
+
+    lists <- c(lists, result[1])
+    csv_names <- c(csv_names, result[2])
+    slopes <- c(slopes, result[3])
+  }
+}
+
+# Create the dataframe
+df <- data.frame(List = lists, CSV_Name = csv_names, Slope = slopes)
+
+```
+
+```{r}
+# Remove leading/trailing whitespace in the CSV_Name column
+df$CSV_Name <- trimws(df$CSV_Name)
+
+# Subset the dataframe to include rows where the second column is "scale"
+subset_df <- df[df$CSV_Name == "scale", ]
+
+# Convert the Slope column to numeric
+subset_df$Slope <- as.numeric(subset_df$Slope)
+
+# Calculate the percentage of negative slopes
+percentage_negative <- sum(subset_df$Slope < 0) / nrow(subset_df) * 100
+
+# Print the result
+percentage_negative
+
+```
+```{r}
+df
+```
+
+```{r}
+# 
+# # Create the boxplot
+# ggplot(data, aes(x = Location, y = Discharge, fill = River)) +
+#   geom_boxplot() +
+#   labs(title = "Discharge by River and Location", x = "Location", y = "Discharge")
+
+df$Slope <- as.numeric(df$Slope)
+library(ggplot2)
+
+# Assuming you have already prepared your data frame `df` with necessary columns
+
+# Define the specific color codes for each box
+color_codes <- c("#3f60aa", "#44c1f0", "#9ec417", "#e4ce00", "#f18800", "#cc340c")
+#9ec417
+# Create the boxplot with specific colors
+ggplot(df, aes(x = CSV_Name, y = Slope, fill = List)) +
+  geom_boxplot() +
+  scale_fill_manual(values = color_codes) +
+  labs(title = " Synthetic Data Slope Variation Over Rivers: Parameter Clusters", x = "Time-variant Parameter", y = "Slope")
+
+```
+
+```{r}
+# Function to read the CSV file and calculate slope
+read_csv_and_slope <- function(folder, file,csv_type,parameter) {
+  csv_file <- file.path(folder, file)
+  data <- read.csv(csv_file)
+  slope <- coef(lm(data[, 1] ~ seq_along(data[, 1])))[2]
+  parameter<-parameter
+  return(c(csv_type,parameter,slope))
+}
+
+# Initialize empty lists
+lists <- vector()
+csv_names <- vector()
+slopes <- vector()
+
+# Loop through each list and CSV files
+for (lst in c(folder_loc_linear, folder_loc_quadratic, folder_loc_piecewise, 
+              folder_sca_linear, folder_sca_quadratic, folder_sca_piecewise, 
+              folder_both_linear, folder_both_quadratic, folder_both_piecewise)) {
+  folder <- basename(lst)
+  csv_files <- list.files(lst, pattern = ".csv", full.names = TRUE)
+  
+  for (csv_file in csv_files) {
+    # Extract the CSV name
+    file_name <- basename(csv_file)
+    
+    # Check for specific numbers in the CSV name
+    if (grepl("76", file_name)) {
+      csv_type <- "River 1"
+    } else if (grepl("1950", file_name)) {
+      csv_type <- "River 2"
+    } else if (grepl("4546", file_name)) {
+      csv_type <- "River 3"
+    } else if (grepl("12966", file_name)) {
+      csv_type <- "River 4"
+    } else if (grepl("32163", file_name)) {
+      csv_type <- "River 6"
+    } else if (grepl("25979", file_name)) {
+      csv_type <- "River 5"
+    } else {
+      csv_type <- "Other"
+    }
+    
+    #####
+   if (grepl("_Partial", folder, ignore.case = TRUE)) {
+    parameter <- "Piecewise with increasing slope only "
+    } else if (grepl("_Linear", folder, ignore.case = TRUE)) {
+    parameter <- "Linear"
+    } else {
+    parameter <- "Quadratic"}
+    
+    
+    # Read the CSV file and calculate slope
+    result <- read_csv_and_slope(folder, file_name, csv_type,parameter)
+    
+    # Append the values to the corresponding lists
+
+    lists <- c(lists, result[1])
+    csv_names <- c(csv_names, result[2])
+    slopes <- c(slopes, result[3])
+  }
+}
+
+# Create the dataframe
+df <- data.frame(List = lists, CSV_Name = csv_names, Slope = slopes)
+
+df$Slope <- as.numeric(df$Slope)
+library(ggplot2)
+
+# Assuming you have already prepared your data frame `df` with necessary columns
+
+# Define the specific color codes for each box
+color_codes <- c("#3f60aa", "#44c1f0", "#9ec417", "#e4ce00", "#f18800", "#cc340c")
+#9ec417
+# Create the boxplot with specific colors
+
+ggplot(df, aes(x = CSV_Name, y = Slope, fill = List)) +
+  geom_boxplot() +
+  scale_fill_manual(values = color_codes) +
+  labs(title = " Synthetic Data Slope Variation Over Rivers: Function Type Clusters", x = "Types of Covariate Function", y = "Slope")
+
+
+```
+```{r}
+# Function to read the CSV file and calculate slope
+read_csv_and_slope <- function(folder, file,csv_type,parameter) {
+  csv_file <- file.path(folder, file)
+  data <- read.csv(csv_file)
+  slope <- coef(lm(data[, 1] ~ seq_along(data[, 1])))[2]
+  parameter<-parameter
+  return(c(csv_type,parameter,slope))
+}
+
+# Initialize empty lists
+lists <- vector()
+csv_names <- vector()
+slopes <- vector()
+
+# Loop through each list and CSV files
+for (lst in c(folder_loc_linear, folder_loc_quadratic)) {
+  folder <- basename(lst)
+  csv_files <- list.files(lst, pattern = ".csv", full.names = TRUE)
+  
+  for (csv_file in csv_files) {
+    # Extract the CSV name
+    file_name <- basename(csv_file)
+    
+    # Check for specific numbers in the CSV name
+    if (grepl("_0.25_", file_name)) {
+      csv_type <- "0.25"
+    } else if (grepl("_0.5_", file_name)) {
+      csv_type <- "0.5"
+    } else if (grepl("_0.75_", file_name)) {
+      csv_type <- "0.75"
+    } else if (grepl("_1_", file_name)) {
+      csv_type <- "1"
+    } 
+    
+    #####
+   if (grepl("_Linear", folder, ignore.case = TRUE)) {
+    parameter <- "Linear"
+    } else {
+    parameter <- "Quadratic"}
+    
+    
+    # Read the CSV file and calculate slope
+    result <- read_csv_and_slope(folder, file_name, csv_type,parameter)
+    
+    # Append the values to the corresponding lists
+
+    lists <- c(lists, result[1])
+    csv_names <- c(csv_names, result[2])
+    slopes <- c(slopes, result[3])
+  }
+}
+
+# Create the dataframe
+df <- data.frame(List = lists, CSV_Name = csv_names, Slope = slopes)
+
+df$Slope <- as.numeric(df$Slope)
+library(ggplot2)
+
+# Assuming you have already prepared your data frame `df` with necessary columns
+
+# Define the specific color codes for each box
+color_codes <- c("#3f60aa", "#44c1f0", "#9ec417", "#e4ce00", "#f18800", "#cc340c")
+#9ec417
+# Create the boxplot with specific colors
+
+ggplot(df, aes(x = CSV_Name, y = Slope, fill = List)) +
+  geom_boxplot() +
+  scale_fill_manual(values = color_codes) +
+  theme(plot.title = element_text(size = 12 )) +
+  labs(title = "Changing Location: \nSynthetic Data Slope Variation Over proportions of maximum coefficients",
+       x = "Types of Covariate Function",
+       y = "Slope")
+
+```
+```{r}
+# Function to read the CSV file and calculate slope
+read_csv_and_slope <- function(folder, file,csv_type,parameter) {
+  csv_file <- file.path(folder, file)
+  data <- read.csv(csv_file)
+  slope <- coef(lm(data[, 1] ~ seq_along(data[, 1])))[2]
+  parameter<-parameter
+  return(c(csv_type,parameter,slope))
+}
+
+# Initialize empty lists
+lists <- vector()
+csv_names <- vector()
+slopes <- vector()
+
+# Loop through each list and CSV files
+for (lst in c(folder_sca_linear, folder_sca_quadratic)) {
+  folder <- basename(lst)
+  csv_files <- list.files(lst, pattern = ".csv", full.names = TRUE)
+  
+  for (csv_file in csv_files) {
+    # Extract the CSV name
+    file_name <- basename(csv_file)
+    
+    # Check for specific numbers in the CSV name
+    if (grepl("_0.25_", file_name)) {
+      csv_type <- "0.25"
+    } else if (grepl("_0.5_", file_name)) {
+      csv_type <- "0.5"
+    } else if (grepl("_0.75_", file_name)) {
+      csv_type <- "0.75"
+    } else if (grepl("_1_", file_name)) {
+      csv_type <- "1"
+    } 
+    
+    #####
+   if (grepl("_Linear", folder, ignore.case = TRUE)) {
+    parameter <- "Linear"
+    } else {
+    parameter <- "Quadratic"}
+    
+    
+    # Read the CSV file and calculate slope
+    result <- read_csv_and_slope(folder, file_name, csv_type,parameter)
+    
+    # Append the values to the corresponding lists
+
+    lists <- c(lists, result[1])
+    csv_names <- c(csv_names, result[2])
+    slopes <- c(slopes, result[3])
+  }
+}
+
+# Create the dataframe
+df <- data.frame(List = lists, CSV_Name = csv_names, Slope = slopes)
+
+df$Slope <- as.numeric(df$Slope)
+library(ggplot2)
+
+# Assuming you have already prepared your data frame `df` with necessary columns
+
+# Define the specific color codes for each box
+color_codes <- c("#3f60aa", "#44c1f0", "#9ec417", "#e4ce00", "#f18800", "#cc340c")
+#9ec417
+# Create the boxplot with specific colors
+
+ggplot(df, aes(x = CSV_Name, y = Slope, fill = List)) +
+  geom_boxplot() +
+  scale_fill_manual(values = color_codes) +
+  theme(plot.title = element_text(size = 12 )) +
+  labs(title = "Changing Scale: \nSynthetic Data Slope Variation Over proportions of maximum coefficients",
+       x = "Types of Covariate Function",
+       y = "Slope")
+
+```
+
+
+```{r}
+# Function to read the CSV file and calculate slope
+read_csv_and_slope <- function(folder, file,csv_type,parameter,folder_sca_piecewise, folder_sca_piecewise_de) {
+  csv_file <- file.path(folder, file)
+  data <- read.csv(csv_file)
+  slope <- coef(lm(data[, 1] ~ seq_along(data[, 1])))[2]
+  parameter<-parameter
+  return(c(csv_type,parameter,slope))
+}
+
+# Initialize empty lists
+lists <- vector()
+csv_names <- vector()
+slopes <- vector()
+
+# Loop through each list and CSV files
+for (lst in c(folder_loc_piecewise, folder_loc_piecewise_de,folder_sca_piecewise, folder_sca_piecewise_de)) {
+  folder <- basename(lst)
+  csv_files <- list.files(lst, pattern = ".csv", full.names = TRUE)
+  
+  for (csv_file in csv_files) {
+    # Extract the CSV name
+    file_name <- basename(csv_file)
+    
+    # Check for specific numbers in the CSV name
+    if (grepl("Partial_1", file_name)) {
+      csv_type <- "2_change points"
+    } else if (grepl("Partial_", file_name)) {
+      csv_type <- "1_change point"
+    }
+    
+    #####
+    
+   if (grepl("ChangingLocation_", folder, ignore.case = TRUE)) {
+    parameter <- "location"
+    } else {
+    parameter <- "scale"}
+    
+    
+    # Read the CSV file and calculate slope
+    result <- read_csv_and_slope(folder, file_name, csv_type,parameter)
+    
+    # Append the values to the corresponding lists
+
+    lists <- c(lists, result[1])
+    csv_names <- c(csv_names, result[2])
+    slopes <- c(slopes, result[3])
+  }
+}
+
+# Create the dataframe
+df <- data.frame(List = lists, CSV_Name = csv_names, Slope = slopes)
+
+df$Slope <- as.numeric(df$Slope)
+library(ggplot2)
+
+# Assuming you have already prepared your data frame `df` with necessary columns
+
+# Define the specific color codes for each box
+color_codes <- c("#3f60aa", "#44c1f0", "#9ec417", "#e4ce00", "#f18800", "#cc340c")
+#9ec417
+# Create the boxplot with specific colors
+
+ggplot(df, aes(x = CSV_Name, y = Slope, fill = List)) +
+  geom_boxplot() +
+  scale_fill_manual(values = color_codes) +
+  theme(plot.title = element_text(size = 12 )) +
+  labs(title = "Synthetic Data Slope Variation Over Different Piecewise Function",
+       x = "Time-variant Parameter",
+       y = "Slope")
+
+```
+```{r}
+# Remove leading/trailing whitespace in the CSV_Name column
+df$CSV_Name <- trimws(df$CSV_Name)
+
+# Subset the dataframe to include rows where the second column is "scale"
+subset_df_scale <- df[df$CSV_Name == "scale", ]
+subset_df_location<- df[df$CSV_Name == "location", ]
+
+
+test1 <- subset_df_scale[subset_df_scale$List == "2_change points", ]
+test2 <- subset_df_scale[subset_df_scale$List == "1_change point", ]
+mean(test1$Slope) 
+mean(test2$Slope) 
+q <- quantile(test3$Slope, probs = c( 0.75))
+q
+
+test3 <- subset_df_location[subset_df_location$List == "2_change points", ]
+test4 <- subset_df_location[subset_df_location$List == "1_change point", ]
+mean(test3$Slope) 
+mean(test4$Slope) 
+# Convert the Slope column to numeric
+subset_df$Slope <- as.numeric(subset_df$Slope)
+
+# Calculate the percentage of negative slopes
+percentage_negative <- sum(subset_df$Slope < 0) / nrow(subset_df) * 100
+
+# Print the result
+percentage_negative
+```
+
+
